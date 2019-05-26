@@ -1,6 +1,7 @@
 package main
 
 import "fmt"
+import "sync"
 import "time"
 import "github.com/google/shlex"
 
@@ -10,21 +11,19 @@ type previewManager struct {
 	sink          chan previewLine
 	queue         chan string
 	killChan      chan struct{}
-	doneChan      chan struct{}
 	maxLines      int
 	maxLineLength int
+	buffer        []byte
 	options       *cliOptions
+	wg            sync.WaitGroup
 }
 
 func newPreviewManager(opt *cliOptions) *previewManager {
 	return &previewManager{
-		sink:          make(chan previewLine, 10),
-		queue:         make(chan string, 5),
-		killChan:      make(chan struct{}),
-		doneChan:      make(chan struct{}),
-		maxLines:      100,
-		maxLineLength: 100,
-		options:       opt,
+		sink:     make(chan previewLine, 5),
+		queue:    make(chan string, 1),
+		killChan: make(chan struct{}),
+		options:  opt,
 	}
 }
 
@@ -58,16 +57,20 @@ func (p *previewManager) perform(query string) {
 		return
 	}
 
+	if cap(p.buffer) < p.maxLineLength {
+		p.buffer = make([]byte, 0, p.maxLineLength)
+	}
+
 	p.uid++
 	p.current = &preview{
-		uid:           p.uid,
-		cmd:           parts[0],
-		args:          parts[1:],
-		killChan:      p.killChan,
-		doneChan:      p.doneChan,
-		sink:          p.sink,
-		maxLines:      p.maxLines,
-		maxLineLength: p.maxLineLength,
+		uid:      p.uid,
+		cmd:      parts[0],
+		args:     parts[1:],
+		buffer:   p.buffer,
+		killChan: p.killChan,
+		sink:     p.sink,
+		maxLines: p.maxLines,
+		wg:       &p.wg,
 	}
-	go p.current.start()
+	p.current.start()
 }

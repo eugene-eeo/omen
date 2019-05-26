@@ -2,16 +2,17 @@ package main
 
 import "os/exec"
 import "bufio"
+import "sync"
 
 type preview struct {
-	uid           uint
-	cmd           string
-	args          []string
-	killChan      chan struct{}
-	doneChan      chan struct{}
-	sink          chan previewLine
-	maxLines      int
-	maxLineLength int
+	uid      uint
+	cmd      string
+	args     []string
+	buffer   []byte
+	killChan chan struct{}
+	sink     chan previewLine
+	maxLines int
+	wg       *sync.WaitGroup
 }
 
 type previewLine struct {
@@ -27,15 +28,18 @@ func (p *preview) start() {
 
 	// 1 goroutine for listening for output
 	// 1 goroutine for waiting for kill signal (if any)
+	p.wg.Add(2)
 
 	go func() {
 		n := 0
 		scanner := bufio.NewScanner(stdout)
-		scanner.Buffer(make([]byte, 0, p.maxLineLength), 0)
+		scanner.Buffer(p.buffer, 0)
 		for n < p.maxLines && scanner.Scan() {
 			n++
 			p.sink <- previewLine{p.uid, n, scanner.Text()}
 		}
+		stdout.Close()
+		p.wg.Done()
 	}()
 
 	go func() {
@@ -44,11 +48,11 @@ func (p *preview) start() {
 		<-p.killChan
 		cmd.Process.Kill()
 		cmd.Process.Release()
-		p.doneChan <- struct{}{}
+		p.wg.Done()
 	}()
 }
 
 func (p *preview) kill() {
 	p.killChan <- struct{}{}
-	<-p.doneChan
+	p.wg.Wait()
 }

@@ -21,7 +21,7 @@ func main() {
 		die(err.Error())
 	}
 	screen.Clear()
-	ib := inputBuffer{buffer: []rune{}}
+	ib := newInputbuffer()
 	pm := newPreviewManager(opts)
 	quit := make(chan bool)
 
@@ -36,6 +36,9 @@ func main() {
 
 	width := 100
 	height := 25
+
+	pm.maxLines = height
+	pm.maxLineLength = width
 
 	go func() {
 		for {
@@ -60,7 +63,7 @@ func main() {
 					// this shouldn't occur too frequently, but it's nice to handle it
 					screen.Clear()
 					pm.debouncePreview(string(ib.buffer))
-					drawPrompt(screen, &ib, width)
+					drawPrompt(screen, opts, ib, width)
 					screen.Sync()
 
 				case *tcell.EventKey:
@@ -77,7 +80,7 @@ func main() {
 							pm.debouncePreview(string(ib.buffer))
 						}
 						if rerender {
-							drawPrompt(screen, &ib, width)
+							drawPrompt(screen, opts, ib, width)
 							screen.Sync()
 						}
 					}
@@ -86,7 +89,7 @@ func main() {
 		}
 	}()
 
-	drawPrompt(screen, &ib, width)
+	drawPrompt(screen, opts, ib, width)
 	screen.Sync()
 	selected := <-quit
 	screen.Fini()

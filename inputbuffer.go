@@ -7,21 +7,30 @@ type inputBuffer struct {
 	buffer []rune
 }
 
-func (i *inputBuffer) delete() {
-	// if we're at the end of the buffer
-	if i.pos == len(i.buffer) {
-		return
+func newInputbuffer() *inputBuffer {
+	return &inputBuffer{
+		pos:    0,
+		buffer: make([]rune, 0, 50),
 	}
-	i.buffer = append(i.buffer[:i.pos], i.buffer[i.pos+1:]...)
 }
 
-func (i *inputBuffer) backspace() {
+func (i *inputBuffer) delete() bool {
+	// if we're at the end of the buffer
+	if i.pos == len(i.buffer) {
+		return false
+	}
+	i.buffer = append(i.buffer[:i.pos], i.buffer[i.pos+1:]...)
+	return true
+}
+
+func (i *inputBuffer) backspace() bool {
 	// if the buffer is empty, or we are at the start of the buffer
 	if len(i.buffer) == 0 || i.pos == 0 {
-		return
+		return false
 	}
 	i.buffer = append(i.buffer[:i.pos-1], i.buffer[i.pos:]...)
 	i.pos--
+	return true
 }
 
 func (i *inputBuffer) advance(direction int) {
@@ -47,9 +56,11 @@ func (i *inputBuffer) handle(ev *tcell.EventKey) (rerender, query_changed bool) 
 	case tcell.KeyBackspace2:
 		fallthrough
 	case tcell.KeyBackspace:
-		i.backspace()
+		b := i.backspace()
+		return b, b
 	case tcell.KeyDelete:
-		i.delete()
+		b := i.delete()
+		return b, b
 	case tcell.KeyLeft:
 		i.advance(-1)
 		return true, false

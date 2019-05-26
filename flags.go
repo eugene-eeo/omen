@@ -6,6 +6,7 @@ import "time"
 type cliOptions struct {
 	cmdFormat    string
 	debounceTime time.Duration
+	prompt       string
 }
 
 func parseFlags() *cliOptions {
@@ -13,6 +14,7 @@ func parseFlags() *cliOptions {
 	i := int64(50)
 
 	flag.StringVar(&c.cmdFormat, "cmd", "echo '%s'", "command to be executed")
+	flag.StringVar(&c.prompt, "prompt", "> ", "prompt string")
 	flag.Int64Var(&i, "debounce", 80, "debounce time (ms)")
 	flag.Parse()
 

@@ -22,16 +22,24 @@ func unicodeCells(R []rune, width int, fill bool, f func(int, rune, int)) {
 	}
 }
 
-func drawPrompt(sc tcell.Screen, ib *inputBuffer, width int) {
-	sc.SetContent(0, 0, '>', nil, tcell.StyleDefault.Dim(true))
+func drawPrompt(sc tcell.Screen, opt *cliOptions, ib *inputBuffer, width int) {
+	xdiff := 0
+	unicodeCells([]rune(opt.prompt), width, false, func(x int, r rune, _ int) {
+		sc.SetContent(x, 0, r, nil, tcell.StyleDefault.Bold(true).Foreground(tcell.ColorRed))
+		xdiff = x
+	})
+	xdiff++
 	m := -1
-	unicodeCells(ib.buffer, width-2, true, func(x int, r rune, i int) {
-		sc.SetContent(2+x, 0, r, nil, tcell.StyleDefault)
+	unicodeCells(ib.buffer, width-xdiff, true, func(x int, r rune, i int) {
+		sc.SetContent(xdiff+x, 0, r, nil, tcell.StyleDefault.Bold(true))
 		if i == ib.pos {
 			m = x
 		}
 	})
 	if m >= 0 {
-		sc.ShowCursor(2+m, 0)
+		sc.ShowCursor(xdiff+m, 0)
+	}
+	for i := 0; i < width; i++ {
+		sc.SetContent(i, 1, '─', nil, tcell.StyleDefault.Dim(true))
 	}
 }
