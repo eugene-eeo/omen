@@ -38,7 +38,7 @@ func (i *inputBuffer) put(r rune) {
 	i.pos++
 }
 
-func (i *inputBuffer) handle(ev *tcell.EventKey) (changed bool) {
+func (i *inputBuffer) handle(ev *tcell.EventKey) (rerender, query_changed bool) {
 	switch ev.Key() {
 	case tcell.KeyBackspace2:
 		fallthrough
@@ -46,12 +46,14 @@ func (i *inputBuffer) handle(ev *tcell.EventKey) (changed bool) {
 		i.backspace()
 	case tcell.KeyLeft:
 		i.advance(-1)
+		return true, false
 	case tcell.KeyRight:
 		i.advance(+1)
+		return true, false
 	case tcell.KeyRune:
 		i.put(ev.Rune())
 	default:
-		return false
+		return false, false
 	}
-	return true
+	return true, true
 }

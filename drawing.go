@@ -26,7 +26,7 @@ func drawPrompt(sc tcell.Screen, ib *inputBuffer, width int) {
 	sc.SetContent(0, 0, '>', nil, tcell.StyleDefault.Dim(true))
 	m := ib.pos
 	u := ' '
-	unicodeCells(ib.buffer, width-2, false, func(x int, r rune) {
+	unicodeCells(ib.buffer, width-2, true, func(x int, r rune) {
 		sc.SetContent(2+x, 0, r, nil, tcell.StyleDefault)
 		if x == m {
 			u = r

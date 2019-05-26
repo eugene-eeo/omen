@@ -45,7 +45,7 @@ func main() {
 			case pd := <-preview_channel:
 				if 1+pd.lineNo < height {
 					y := 2 + pd.lineNo
-					unicodeCells([]rune(pd.line), width-2, false, func(x int, r rune) {
+					unicodeCells([]rune(pd.line), width, true, func(x int, r rune) {
 						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
 					})
 					screen.Sync()
@@ -65,14 +65,15 @@ func main() {
 					case tcell.KeyEnter:
 						quit <- true
 					default:
-						changed := ib.handle(x)
-						if !changed {
-							continue
+						rerender, query_changed := ib.handle(x)
+						if query_changed {
+							screen.Clear()
+							pm.debouncePreview(string(ib.buffer))
 						}
-						screen.Clear()
-						drawPrompt(screen, &ib, width)
-						screen.Sync()
-						pm.debouncePreview(string(ib.buffer))
+						if rerender {
+							drawPrompt(screen, &ib, width)
+							screen.Sync()
+						}
 					}
 				}
 			}
