@@ -69,10 +69,14 @@ func main() {
 				case *tcell.EventKey:
 					x := ev.(*tcell.EventKey)
 					switch x.Key() {
+					case tcell.KeyCtrlC:
+						fallthrough
 					case tcell.KeyEscape:
 						quit <- false
+						break
 					case tcell.KeyEnter:
 						quit <- true
+						break
 					default:
 						rerender, query_changed := ib.handle(x)
 						if query_changed {
@@ -93,7 +97,11 @@ func main() {
 	screen.Sync()
 	selected := <-quit
 	screen.Fini()
-	if selected {
+
+	if selected && (opts.allowEmpty || len(ib.buffer) > 0) {
 		fmt.Println(string(ib.buffer))
+		os.Exit(0)
 	}
+	os.Exit(1)
+
 }

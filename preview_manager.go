@@ -36,7 +36,9 @@ func (p *previewManager) listen() {
 			case query = <-p.queue:
 				timer.Reset(p.options.debounceTime)
 			case <-timer.C:
-				p.perform(query)
+				if query != "" || p.options.allowEmpty {
+					p.perform(query)
+				}
 			}
 		}
 	}()
