@@ -1,9 +1,7 @@
 package main
 
-import "fmt"
 import "sync"
 import "time"
-import "github.com/google/shlex"
 
 type previewManager struct {
 	uid           uint
@@ -54,8 +52,8 @@ func (p *previewManager) perform(query string) {
 		p.current = nil
 	}
 
-	parts, err := shlex.Split(fmt.Sprintf(p.options.cmdFormat, query))
-	if err != nil && len(parts) > 0 {
+	parts, err := expandCommand(p.options.cmdFormat, query)
+	if err != nil {
 		return
 	}
 
