@@ -49,7 +49,7 @@ func main() {
 					unicodeCells(pd.line, width, true, func(x int, r rune, _ int) {
 						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
 					})
-					screen.Sync()
+					screen.Show()
 				}
 
 			case ev := <-tcell_events:
@@ -58,13 +58,13 @@ func main() {
 					x := ev.(*tcell.EventResize)
 					width, height = x.Size()
 					pm.maxLines = height - 2
-					pm.maxLineLength = width
+					pm.maxLineLength = width * 4 // Max 4 bytes in a UTF-8 codepoint
 					// Treat resizing as a new preview request
 					// this shouldn't occur too frequently, but it's nice to handle it
 					screen.Clear()
 					pm.debouncePreview(string(ib.buffer))
 					drawPrompt(screen, opts, ib, width)
-					screen.Sync()
+					screen.Show()
 
 				case *tcell.EventKey:
 					x := ev.(*tcell.EventKey)
@@ -85,7 +85,7 @@ func main() {
 						}
 						if rerender {
 							drawPrompt(screen, opts, ib, width)
-							screen.Sync()
+							screen.Show()
 						}
 					}
 				}
@@ -94,7 +94,7 @@ func main() {
 	}()
 
 	drawPrompt(screen, opts, ib, width)
-	screen.Sync()
+	screen.Show()
 	selected := <-quit
 	screen.Fini()
 
