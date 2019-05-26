@@ -30,13 +30,12 @@ func newPreviewManager(opt *cliOptions) *previewManager {
 
 func (p *previewManager) listen() {
 	go func() {
-		interval := 50 * time.Millisecond
-		timer := time.NewTimer(interval)
+		timer := time.NewTimer(p.options.debounceTime)
 		query := ""
 		for {
 			select {
 			case query = <-p.queue:
-				timer.Reset(interval)
+				timer.Reset(p.options.debounceTime)
 			case <-timer.C:
 				p.perform(query)
 			}

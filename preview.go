@@ -31,7 +31,7 @@ func (p *preview) start() {
 	go func() {
 		n := 0
 		scanner := bufio.NewScanner(stdout)
-		scanner.Buffer(make([]byte, p.maxLineLength), p.maxLineLength)
+		scanner.Buffer(make([]byte, 0, p.maxLineLength), 0)
 		for n < p.maxLines && scanner.Scan() {
 			n++
 			p.sink <- previewLine{p.uid, n, scanner.Text()}

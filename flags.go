@@ -13,7 +13,7 @@ func parseFlags() *cliOptions {
 	i := int64(50)
 
 	flag.StringVar(&c.cmdFormat, "cmd", "echo '%s'", "command to be executed")
-	flag.Int64Var(&i, "debounce", 50, "debounce time (ms)")
+	flag.Int64Var(&i, "debounce", 80, "debounce time (ms)")
 	flag.Parse()
 
 	c.debounceTime = time.Duration(i) * time.Millisecond
