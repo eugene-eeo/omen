@@ -56,6 +56,12 @@ func main() {
 					width, height = x.Size()
 					pm.maxLines = height - 2
 					pm.maxLineLength = width
+					// Treat resizing as a new preview request
+					// this shouldn't occur too frequently, but it's nice to handle it
+					screen.Clear()
+					pm.debouncePreview(string(ib.buffer))
+					drawPrompt(screen, &ib, width)
+					screen.Sync()
 
 				case *tcell.EventKey:
 					x := ev.(*tcell.EventKey)
