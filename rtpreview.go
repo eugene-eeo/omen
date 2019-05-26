@@ -20,11 +20,7 @@ func main() {
 	}
 	screen.Clear()
 	ib := inputBuffer{buffer: []rune{}}
-	pm := previewManager{
-		sink:           make(chan previewDone, 10),
-		queue:          make(chan string),
-		debouncedQueue: make(chan string),
-	}
+	pm := newPreviewManager()
 	quit := make(chan bool)
 
 	tcell_events := make(chan tcell.Event)
@@ -34,7 +30,7 @@ func main() {
 		}
 	}()
 
-	preview_channel := pm.listen()
+	pm.listen()
 
 	width := 100
 	height := 25
@@ -42,9 +38,9 @@ func main() {
 	go func() {
 		for {
 			select {
-			case pd := <-preview_channel:
-				if 1+pd.lineNo < height {
-					y := 2 + pd.lineNo
+			case pd := <-pm.sink:
+				if 1+pd.lineNo < height && pd.uid == pm.uid {
+					y := 1 + pd.lineNo
 					unicodeCells([]rune(pd.line), width, true, func(x int, r rune) {
 						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
 					})
@@ -56,6 +52,7 @@ func main() {
 				case *tcell.EventResize:
 					x := ev.(*tcell.EventResize)
 					width, height = x.Size()
+					pm.maxLines = height - 2
 
 				case *tcell.EventKey:
 					x := ev.(*tcell.EventKey)

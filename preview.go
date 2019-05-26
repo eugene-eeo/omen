@@ -4,16 +4,16 @@ import "os/exec"
 import "bufio"
 
 type preview struct {
-	uid   uint
-	cmd   string
-	args  []string
-	kill  chan struct{}
-	done  chan struct{}
-	sink  chan previewDone
-	lines int
+	uid      uint
+	cmd      string
+	args     []string
+	killChan chan struct{}
+	doneChan chan struct{}
+	sink     chan previewLine
+	lines    int
 }
 
-type previewDone struct {
+type previewLine struct {
 	uid    uint
 	lineNo int
 	line   string
@@ -31,22 +31,22 @@ func (p *preview) start() {
 		n := 0
 		scanner := bufio.NewScanner(stdout)
 		for n < p.lines && scanner.Scan() {
-			p.sink <- previewDone{p.uid, n, scanner.Text()}
 			n++
+			p.sink <- previewLine{p.uid, n, scanner.Text()}
 		}
 	}()
 
 	go func() {
-		// When we're done or we receive a kill-signal, just kill the damn process,
-		// and send a signal to p.done.
-		<-p.kill
+		// When we receive a kill-signal, just kill the process and send
+		// a signal to p.done.
+		<-p.killChan
 		cmd.Process.Kill()
 		cmd.Process.Release()
-		p.done <- struct{}{}
+		p.doneChan <- struct{}{}
 	}()
 }
 
-func (p *preview) destroy() {
-	p.kill <- struct{}{}
-	<-p.done
+func (p *preview) kill() {
+	p.killChan <- struct{}{}
+	<-p.doneChan
 }
