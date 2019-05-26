@@ -4,13 +4,14 @@ import "os/exec"
 import "bufio"
 
 type preview struct {
-	uid      uint
-	cmd      string
-	args     []string
-	killChan chan struct{}
-	doneChan chan struct{}
-	sink     chan previewLine
-	lines    int
+	uid           uint
+	cmd           string
+	args          []string
+	killChan      chan struct{}
+	doneChan      chan struct{}
+	sink          chan previewLine
+	maxLines      int
+	maxLineLength int
 }
 
 type previewLine struct {
@@ -30,7 +31,8 @@ func (p *preview) start() {
 	go func() {
 		n := 0
 		scanner := bufio.NewScanner(stdout)
-		for n < p.lines && scanner.Scan() {
+		scanner.Buffer(make([]byte, p.maxLineLength), p.maxLineLength)
+		for n < p.maxLines && scanner.Scan() {
 			n++
 			p.sink <- previewLine{p.uid, n, scanner.Text()}
 		}

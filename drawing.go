@@ -3,7 +3,7 @@ package main
 import "github.com/gdamore/tcell"
 import runewidth "github.com/mattn/go-runewidth"
 
-func unicodeCells(R []rune, width int, fill bool, f func(int, rune)) {
+func unicodeCells(R []rune, width int, fill bool, f func(int, rune, int)) {
 	x := 0
 	n := len(R)
 	for i := 0; x <= width; i++ {
@@ -17,20 +17,21 @@ func unicodeCells(R []rune, width int, fill bool, f func(int, rune)) {
 		} else if !fill {
 			break
 		}
-		f(x, r)
+		f(x, r, i)
 		x += runewidth.RuneWidth(r)
 	}
 }
 
 func drawPrompt(sc tcell.Screen, ib *inputBuffer, width int) {
 	sc.SetContent(0, 0, '>', nil, tcell.StyleDefault.Dim(true))
-	m := ib.pos
-	u := ' '
-	unicodeCells(ib.buffer, width-2, true, func(x int, r rune) {
+	m := -1
+	unicodeCells(ib.buffer, width-2, true, func(x int, r rune, i int) {
 		sc.SetContent(2+x, 0, r, nil, tcell.StyleDefault)
-		if x == m {
-			u = r
+		if i == ib.pos {
+			m = x
 		}
 	})
-	sc.SetContent(2+m, 0, u, nil, tcell.StyleDefault.Reverse(true))
+	if m >= 0 {
+		sc.ShowCursor(2+m, 0)
+	}
 }

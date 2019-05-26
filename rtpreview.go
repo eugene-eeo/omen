@@ -10,6 +10,8 @@ func die(what string) {
 }
 
 func main() {
+	opts := parseFlags()
+
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	screen, err := tcell.NewScreen()
 	if err != nil {
@@ -20,7 +22,7 @@ func main() {
 	}
 	screen.Clear()
 	ib := inputBuffer{buffer: []rune{}}
-	pm := newPreviewManager()
+	pm := newPreviewManager(opts)
 	quit := make(chan bool)
 
 	tcell_events := make(chan tcell.Event)
@@ -39,9 +41,9 @@ func main() {
 		for {
 			select {
 			case pd := <-pm.sink:
-				if 1+pd.lineNo < height && pd.uid == pm.uid {
+				if pd.uid == pm.uid && 1+pd.lineNo < height {
 					y := 1 + pd.lineNo
-					unicodeCells([]rune(pd.line), width, true, func(x int, r rune) {
+					unicodeCells([]rune(pd.line), width, true, func(x int, r rune, _ int) {
 						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
 					})
 					screen.Sync()
@@ -53,6 +55,7 @@ func main() {
 					x := ev.(*tcell.EventResize)
 					width, height = x.Size()
 					pm.maxLines = height - 2
+					pm.maxLineLength = width
 
 				case *tcell.EventKey:
 					x := ev.(*tcell.EventKey)
