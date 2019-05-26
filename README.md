@@ -10,7 +10,7 @@ core is complete for the most part.
 todo:
 
  - [ ] testing
- - [ ] custom prompt
+ - [x] custom prompt
  - [ ] support for padding
  - [ ] custom colourscheme
  - [ ] handle colours
