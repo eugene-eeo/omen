@@ -1,5 +1,6 @@
 package main
 
+import "bytes"
 import "os/exec"
 import "bufio"
 import "sync"
@@ -18,7 +19,7 @@ type preview struct {
 type previewLine struct {
 	uid    uint
 	lineNo int
-	line   string
+	line   []rune
 }
 
 func (p *preview) start() {
@@ -36,7 +37,7 @@ func (p *preview) start() {
 		scanner.Buffer(p.buffer, 0)
 		for n < p.maxLines && scanner.Scan() {
 			n++
-			p.sink <- previewLine{p.uid, n, scanner.Text()}
+			p.sink <- previewLine{p.uid, n, bytes.Runes(scanner.Bytes())}
 		}
 		stdout.Close()
 		p.wg.Done()

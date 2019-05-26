@@ -46,7 +46,7 @@ func main() {
 			case pd := <-pm.sink:
 				if pd.uid == pm.uid && 1+pd.lineNo < height {
 					y := 1 + pd.lineNo
-					unicodeCells([]rune(pd.line), width, true, func(x int, r rune, _ int) {
+					unicodeCells(pd.line, width, true, func(x int, r rune, _ int) {
 						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
 					})
 					screen.Sync()
