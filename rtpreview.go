@@ -25,7 +25,7 @@ func main() {
 		queue:          make(chan string),
 		debouncedQueue: make(chan string),
 	}
-	quit := make(chan struct{})
+	quit := make(chan bool)
 
 	tcell_events := make(chan tcell.Event)
 	go func() {
@@ -36,29 +36,41 @@ func main() {
 
 	preview_channel := pm.listen()
 
+	width := 100
+	height := 25
+
 	go func() {
 		for {
 			select {
 			case pd := <-preview_channel:
-				for dx, r := range []rune(pd.line) {
-					screen.SetCell(dx, 2+pd.lineNo, tcell.StyleDefault, r)
+				if 1+pd.lineNo < height {
+					y := 2 + pd.lineNo
+					unicodeCells([]rune(pd.line), width-2, false, func(x int, r rune) {
+						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
+					})
+					screen.Sync()
 				}
-				screen.Sync()
 
 			case ev := <-tcell_events:
 				switch ev.(type) {
+				case *tcell.EventResize:
+					x := ev.(*tcell.EventResize)
+					width, height = x.Size()
+
 				case *tcell.EventKey:
 					x := ev.(*tcell.EventKey)
 					switch x.Key() {
 					case tcell.KeyEscape:
-						quit <- struct{}{}
+						quit <- false
+					case tcell.KeyEnter:
+						quit <- true
 					default:
 						changed := ib.handle(x)
 						if !changed {
 							continue
 						}
 						screen.Clear()
-						drawPrompt(screen, &ib)
+						drawPrompt(screen, &ib, width)
 						screen.Sync()
 						pm.debouncePreview(string(ib.buffer))
 					}
@@ -67,8 +79,11 @@ func main() {
 		}
 	}()
 
-	drawPrompt(screen, &ib)
+	drawPrompt(screen, &ib, width)
 	screen.Sync()
-	<-quit
+	selected := <-quit
 	screen.Fini()
+	if selected {
+		fmt.Println(string(ib.buffer))
+	}
 }
