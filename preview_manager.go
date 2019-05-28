@@ -14,14 +14,17 @@ type previewManager struct {
 	buffer        []byte
 	options       *cliOptions
 	wg            sync.WaitGroup
+	pf            *ParsedFormat
 }
 
 func newPreviewManager(opt *cliOptions) *previewManager {
+	pf := parseCommandFormat([]rune(opt.cmdFormat))
 	return &previewManager{
 		sink:     make(chan previewLine, 5),
 		queue:    make(chan string, 1),
 		killChan: make(chan struct{}),
 		options:  opt,
+		pf:       &pf,
 	}
 }
 
@@ -52,7 +55,7 @@ func (p *previewManager) perform(query string) {
 		p.current = nil
 	}
 
-	parts, err := expandCommand(p.options.cmdFormat, query)
+	parts, err := p.pf.Expand(query)
 	if err != nil {
 		return
 	}

@@ -14,15 +14,17 @@ func TestExpand(t *testing.T) {
 		{"ag -i -- {}", "abc d", []string{"ag", "-i", "--", "abc", "d"}},
 	}
 	for n, entry := range table {
-		cmd, err := expandCommand(entry.cmdFormat, entry.query)
+		pf := parseCommandFormat([]rune(entry.cmdFormat))
+		cmd, err := pf.Expand(entry.query)
 		if err != nil {
 			t.Error(n, "Unexpected error", err)
 		}
 		if len(cmd) != len(entry.expected) {
 			t.Error(n, "Expected", entry.expected, "got", cmd)
+			continue
 		}
 		for i, x := range entry.expected {
-			if x != cmd[i] {
+			if cmd[i] != x {
 				t.Error(n, entry.cmdFormat, ":", i, "Expected", x, "got", cmd[i])
 			}
 		}
@@ -32,21 +34,29 @@ func TestExpand(t *testing.T) {
 func TestReplaceCommandFormat(t *testing.T) {
 	type tableEntry struct {
 		fmt   string
-		query string
-		str   string
+		doSub bool
+		left  string
+		right string
 	}
 	table := []tableEntry{
-		{"ag {}", "query", "ag query"},
-		{"ag {{}", "query", "ag {}"},
-		{"ag {{}}", "query", "ag {}"},
-		{"ag {a}", "query", "ag {a}"},
-		{"ag {a}b", "query", "ag {a}b"},
-		{"ag }{", "query", "ag }{"},
+		{"ag {}", true, "ag ", ""},
+		{"ag {{}", false, "ag {}", ""},
+		{"ag {{}}", false, "ag {}", ""},
+		{"ag {a}", false, "ag {a}", ""},
+		{"ag {a}b", false, "ag {a}b", ""},
+		{"ag }{", false, "ag }{", ""},
+		{"ag }{ {} }{", true, "ag }{ ", " }{"},
 	}
 	for _, entry := range table {
-		expanded := replaceCommandFormat(entry.fmt, entry.query)
-		if expanded != entry.str {
-			t.Error("expandCommand(", entry.fmt, ",", entry.query, "): expected", entry.str, "got", expanded)
+		pf := parseCommandFormat([]rune(entry.fmt))
+		if pf.doSub != entry.doSub {
+			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.doSub", entry.doSub, "got", pf.doSub)
+		}
+		if pf.left != entry.left {
+			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.left", entry.left, "got", pf.left)
+		}
+		if pf.right != entry.right {
+			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.right", entry.right, "got", pf.right)
 		}
 	}
 }
