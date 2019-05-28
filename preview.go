@@ -47,8 +47,10 @@ func (p *preview) start() {
 		// When we receive a kill-signal, just kill the process and send
 		// a signal to p.done.
 		<-p.killChan
-		cmd.Process.Kill()
-		cmd.Process.Release()
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+			cmd.Process.Release()
+		}
 		p.wg.Done()
 	}()
 }
