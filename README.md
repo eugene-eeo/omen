@@ -5,7 +5,7 @@ currently supports unicode well enough, but if the output of the command contain
 colours it will not be handled properly.
 core is complete for the most part.
 
-    $ omen -cmd 'ag "%s"'
+    $ omen -cmd 'rg -i -- "{}"'
 
 todo:
 
