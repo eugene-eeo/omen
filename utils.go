@@ -1,24 +1,18 @@
 package main
 
+import "strings"
 import "errors"
 import "github.com/google/shlex"
 
 var noCommand = errors.New("no command expanded")
 
-type ParsedFormat struct {
-	doSub bool
-	left  string
-	right string
+type ParsedFormat []string
+
+func (p ParsedFormat) Format(query string) string {
+	return strings.Join(p, query)
 }
 
-func (p *ParsedFormat) Format(query string) string {
-	if !p.doSub {
-		return p.left
-	}
-	return p.left + query + p.right
-}
-
-func (p *ParsedFormat) Expand(query string) ([]string, error) {
+func (p ParsedFormat) Expand(query string) ([]string, error) {
 	s := p.Format(query)
 	parts, err := shlex.Split(s)
 	if err != nil {
@@ -31,10 +25,8 @@ func (p *ParsedFormat) Expand(query string) ([]string, error) {
 }
 
 func parseCommandFormat(cmdFmt []rune) ParsedFormat {
-	doSub := false
-	L := make([]rune, 0, len(cmdFmt))
-	R := make([]rune, 0, len(cmdFmt))
-	B := &L
+	parts := []string{}
+	B := make([]rune, 0, len(cmdFmt))
 	seen_left := false  // prev is a {
 	seen_right := false // prev is a }
 	for _, r := range cmdFmt {
@@ -42,13 +34,13 @@ func parseCommandFormat(cmdFmt []rune) ParsedFormat {
 		case '{':
 			// handle '}{'
 			if seen_right {
-				*B = append(*B, '}')
+				B = append(B, '}')
 				seen_right = false
 				seen_left = true
 				continue
 			}
 			if seen_left {
-				*B = append(*B, '{')
+				B = append(B, '{')
 				seen_left = false
 				continue
 			}
@@ -56,37 +48,39 @@ func parseCommandFormat(cmdFmt []rune) ParsedFormat {
 			seen_right = false
 		case '}':
 			if seen_right {
-				*B = append(*B, '}')
+				B = append(B, '}')
 				seen_right = false
 				continue
 			}
 			// here we've seen '{}', so split here
 			if seen_left {
 				seen_left = false
-				B = &R
-				doSub = true
+				parts = append(parts, string(B))
+				// reset buffer
+				B = B[:0]
 				continue
 			}
 			seen_left = false
 			seen_right = true
 		default:
 			if seen_left {
-				*B = append(*B, '{')
+				B = append(B, '{')
 				seen_left = false
 			}
 			if seen_right {
-				*B = append(*B, '}')
+				B = append(B, '}')
 				seen_right = false
 			}
-			*B = append(*B, r)
+			B = append(B, r)
 		}
 	}
 	// Finally append any excess
 	if seen_left {
-		*B = append(*B, '{')
+		B = append(B, '{')
 	}
 	if seen_right {
-		*B = append(*B, '}')
+		B = append(B, '}')
 	}
-	return ParsedFormat{doSub, string(L), string(R)}
+	parts = append(parts, string(B))
+	return ParsedFormat(parts)
 }

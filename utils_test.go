@@ -1,5 +1,6 @@
 package main
 
+import "reflect"
 import "testing"
 
 func TestExpand(t *testing.T) {
@@ -34,49 +35,22 @@ func TestExpand(t *testing.T) {
 func TestReplaceCommandFormat(t *testing.T) {
 	type tableEntry struct {
 		fmt   string
-		doSub bool
-		left  string
-		right string
+		parts []string
 	}
 	table := []tableEntry{
-		{"ag {}", true, "ag ", ""},
-		{"ag {{}", false, "ag {}", ""},
-		{"ag {{}}", false, "ag {}", ""},
-		{"ag {a}", false, "ag {a}", ""},
-		{"ag {a}b", false, "ag {a}b", ""},
-		{"ag }{", false, "ag }{", ""},
-		{"ag }{ {} }{", true, "ag }{ ", " }{"},
+		{"ag {}", []string{"ag ", ""}},
+		{"ag {{}", []string{"ag {}"}},
+		{"ag {{}}", []string{"ag {}"}},
+		{"ag {a}", []string{"ag {a}"}},
+		{"ag {a}b", []string{"ag {a}b"}},
+		{"ag }{", []string{"ag }{"}},
+		{"ag }{ {} }{", []string{"ag }{ ", " }{"}},
+		{"ag }{ {} }{ {}", []string{"ag }{ ", " }{ ", ""}},
 	}
 	for _, entry := range table {
 		pf := parseCommandFormat([]rune(entry.fmt))
-		if pf.doSub != entry.doSub {
-			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.doSub", entry.doSub, "got", pf.doSub)
-		}
-		if pf.left != entry.left {
-			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.left", entry.left, "got", pf.left)
-		}
-		if pf.right != entry.right {
-			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.right", entry.right, "got", pf.right)
-		}
-	}
-}
-
-func TestFormat(t *testing.T) {
-	type tableEntry struct {
-		pf       ParsedFormat
-		query    string
-		expected string
-	}
-	table := []tableEntry{
-		{ParsedFormat{true, "a", "b"}, "query", "aqueryb"},
-		{ParsedFormat{false, "a", "b"}, "query", "a"},
-		{ParsedFormat{false, "a", ""}, "query", "a"},
-		{ParsedFormat{true, "ag -i -- ", " abc"}, "query", "ag -i -- query abc"},
-	}
-	for i, entry := range table {
-		s := entry.pf.Format(entry.query)
-		if s != entry.expected {
-			t.Error(i, "pf.Format(...): expected", entry.expected, "got", s)
+		if !reflect.DeepEqual([]string(pf), entry.parts) {
+			t.Error("parseCommandFormat(", entry.fmt, "): expected pf.parts == ", entry.parts, "got", pf)
 		}
 	}
 }
