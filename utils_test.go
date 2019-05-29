@@ -60,3 +60,23 @@ func TestReplaceCommandFormat(t *testing.T) {
 		}
 	}
 }
+
+func TestFormat(t *testing.T) {
+	type tableEntry struct {
+		pf       ParsedFormat
+		query    string
+		expected string
+	}
+	table := []tableEntry{
+		{ParsedFormat{true, "a", "b"}, "query", "aqueryb"},
+		{ParsedFormat{false, "a", "b"}, "query", "a"},
+		{ParsedFormat{false, "a", ""}, "query", "a"},
+		{ParsedFormat{true, "ag -i -- ", " abc"}, "query", "ag -i -- query abc"},
+	}
+	for i, entry := range table {
+		s := entry.pf.Format(entry.query)
+		if s != entry.expected {
+			t.Error(i, "pf.Format(...): expected", entry.expected, "got", s)
+		}
+	}
+}
