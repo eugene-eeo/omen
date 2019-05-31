@@ -27,8 +27,8 @@ func (p ParsedFormat) Expand(query string) ([]string, error) {
 func parseCommandFormat(cmdFmt []rune) ParsedFormat {
 	parts := []string{}
 	B := make([]rune, 0, len(cmdFmt))
-	seen_left := false  // prev is a {
-	seen_right := false // prev is a }
+	seen_left := false  // seen an unmatched {
+	seen_right := false // seen an unmatched }
 	for _, r := range cmdFmt {
 		switch r {
 		case '{':
