@@ -45,3 +45,14 @@ func drawPrompt(sc tcell.Screen, opt *cliOptions, ib *inputBuffer, width int) {
 		sc.SetContent(i, 1, '─', nil, tcell.StyleDefault.Dim(true))
 	}
 }
+
+func drawPreviewLine(sc tcell.Screen, opt *cliOptions, pd previewLine, width, height int) {
+	y := 1 + pd.lineNo
+	// don't draw if the y-position is >= height
+	if y >= height {
+		return
+	}
+	unicodeCells(pd.line, width, false, func(x int, r rune) {
+		sc.SetContent(x, y, r, nil, tcell.StyleDefault)
+	})
+}

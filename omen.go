@@ -44,11 +44,8 @@ func main() {
 		for {
 			select {
 			case pd := <-pm.sink:
-				if pd.uid == pm.uid && 1+pd.lineNo < height {
-					y := 1 + pd.lineNo
-					unicodeCells(pd.line, width, true, func(x int, r rune) {
-						screen.SetContent(x, y, r, nil, tcell.StyleDefault)
-					})
+				if pd.uid == pm.uid {
+					drawPreviewLine(screen, opts, pd, width, height)
 					screen.Show()
 				}
 
